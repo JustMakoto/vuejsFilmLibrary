@@ -1,34 +1,8 @@
+import firebase from 'firebase/app'
+import Task from './task_help'
 export default {
     state: {
-        tasks: [
-            {
-                'id': 1,
-                'time': '2 hours 10 minutes',
-                'title': 'Harry Potter & cursed child',
-                'description': 'This description is so cool in my opinion',
-                'whatWatch': 'Film',
-                'completed': false,
-                'editing': false
-            },
-            {
-                'id': 2,
-                'title': 'Hack',
-                'time': '1 hours 57 minutes',
-                'description': 'I dont know what i need to write at this description',
-                'whatWatch': 'Film',
-                'completed': true,
-                'editing': false
-            },
-            {
-                'id': 3,
-                'title': 'Game of Thrones',
-                'time': '98 hours 56 minutes',
-                'description': 'So many seasons',
-                'whatWatch': 'Serial',
-                'completed': false,
-                'editing': false
-            }
-        ]
+        tasks: []
     },
     mutations: {
         newTask (state, payload) {
@@ -36,9 +10,49 @@ export default {
         }
     },
     actions: {
-        newTask ({commit}, payload) {
-            payload.id = Math.random()
-            commit('newTask', payload)
+        async loadTasks({commit}, payload){
+            commit('clearError')
+            commit('setLoading', true)
+            try{
+                const task = await firebase.database().ref('tasks').once('value')
+                const tasks = task.val()
+                
+                
+                commit('setLoading', false)
+            }catch (error){
+
+                commit('setLoading', false)
+                commit('setError', error.message)
+                throw error
+            }
+        },
+        async newTask({commit, getters}, payload){
+            commit('clearError')
+            commit('setLoading', true)
+            try{
+                const newTask = new Task(
+                    payload.title,
+                    payload.description,
+                    payload.whatWatch,
+                    payload.time,
+                    payload.tags,
+                    payload.completed,
+                    payload.editing,
+                    getters.user.id
+                )
+                const task = await firebase.database().ref('tasks').push(newTask)
+                
+                commit('newTask', {
+                    ...newTask,
+                    id: task.key
+                })
+                commit('setLoading', false)
+            }catch (error){
+
+                commit('setLoading', false)
+                commit('setError', error.message)
+                throw error
+            }
         }
     },
     getters: {

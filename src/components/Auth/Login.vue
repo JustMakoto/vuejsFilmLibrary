@@ -34,12 +34,13 @@
                             .buttons-list
                                 button.button.button-primary(
                                     type="submit"
-                                    :disabled="submitStatus === PENDING"
-                                ) Login
+                                ) 
+                                    span(v-if="loading") Loading ...
+                                    span(v-else) Login
                             .buttons-list.buttons-list--info
                                 p.typo__p(v-if="submitStatus === 'OK'") Thanks for your submission!
                                 p.typo__p(v-if="submitStatus === 'ERROR'") Please fill the form correctly.
-                                p.typo__p(v-if="submitStatus === 'PENDING'") Sending...
+                                p.typo__p(v-else) {{submitStatus}}
 
                             .buttons-list.buttons-list--info
                                 span Need Registration?
@@ -73,19 +74,27 @@ export default {
             if (this.$v.$invalid) {
                 this.submitStatus = 'ERROR'
             } else {
-                console.log('Login!')
                 const user = {
                     email: this.email,
                     password: this.password
                 }
-                console.log('user!')
-                this.submitStatus = 'PENDING'
-                setTimeout(() => {
-                    this.submitStatus = 'OK'
-                }, 500)
-      }
+                this.$store.dispatch('loginUser', user)
+                    .then(() => {
+                        console.log('LOGIN!')
+                        this.submitStatus = 'OK'
+                        this.$router.push('/')
+                    })
+                    .catch(err => {
+                        this.submitStatus = err.message
+                    })
+            }
+        }
+    },
+    computed: {
+        loading(){
+            return this.$store.getters.loading
+        }
     }
-  }
 }
 </script>
 
