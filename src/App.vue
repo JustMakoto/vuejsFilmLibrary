@@ -36,6 +36,7 @@ export default {
       menuShow: false,
       linkMenu: [
         {title: 'Home', url: '/'},
+        {title: 'Tasks', url: '/task'},
         {title: 'Login', url: '/login'},
         {title: 'Registration', url: '/registration'}
       ]
@@ -45,5 +46,5 @@ export default {
 </script>
 
 <style lang="stylus">
-@import './assets/stylus/main.styl';
+//@import './assets/stylus/main.styl';
 </style>

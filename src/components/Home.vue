@@ -3,12 +3,16 @@
         section
             .container
                 h1.ui-title-1 Home
-                input(
-                    type="text"
-                    placeholder="What we will watch?"
-                    v-model="taskTitle"
-                    @keyup.enter="newTask"
-                )
+                .form-item(:class="{ 'errorInput': $v.taskTitle.$error }")
+                    input(
+                        type="text"
+                        placeholder="What we will watch?"
+                        v-model="taskTitle"
+                        @keyup.enter="newTask"
+                        :class="{ 'error': $v.taskTitle.$error }"
+                        @change="$v.taskTitle.$touch()"
+                    )
+                    .error(v-if="!$v.taskTitle.required") Field is required
                 textarea(
                     type="text"
                     v-model="taskDescription"
@@ -37,99 +41,183 @@
                     .total-time__film(
                         v-if="whatWatch === 'Film'"
                     )
-                        span Total Film Times
+                        span.time-title Hours
+                        input.time-input(
+                            type="number"
+                            v-model="filmHours"
+                        )
+                        span.time-title Minutes
+                        input.time-input(
+                            type="number"
+                            v-model="filmMinutes"
+                        )
+
+                        p {{ filmTime }}
+                    
                     .total-time__serial(
                         v-if="whatWatch === 'Serial'"
                     )
-                        span Total Serial Times
-                .tag-list
-                    .ui-tag__wrapper
-                        .ui-tag
-                            span.tag-title Dogs
-                            span.button-close
+                        span.time-title How many seasons?
+                        input.time-input(
+                            type="number"
+                            v-model="serialSeason"
+                        )
+                        span.time-title How many series?
+                        input.time-input(
+                            type="number"
+                            v-model="serialSeries"
+                        )
+                        span.time-title How long is one series (minutes)?
+                        input.time-input(
+                            type="number"
+                            v-model="serialSeriesMinutes"
+                        )
 
-        section
-            .container
-                .task-list
-                    .task-item(
-                        v-for="task in tasks"
-                        :key="task.id"
-                        :class="{completed: task.completed}"
+                        p {{ serialTime }}
+
+                .tag-list.tag-list--add
+                    .ui-tag__wrapper(
+                        @click="tagMenuShow = !tagMenuShow"
                     )
-                        .ui-card.ui-card--shadow
-                            .task-item__info
-                                .task-item__main-info
-                                    span.ui-label.ui-label--light {{task.whatWatch}}
-                                    span Total Time: 
+                        .ui-tag
+                            span.tag-title Add New
+                            span.button-close(
+                                :class="{ active: !tagMenuShow }"
+                            )
+
+                .tag-list.tag-list--menu(
+                    v-if="tagMenuShow"
+                )
+                
+                    input.tag-add--input(
+                        type="text"
+                        placeholder="New Tag"
+                        v-model="tagTitle"
+                        @keyup.enter="newTag"
+                    )
+                    .button.button-default(
+                        @click="newTag"
+                    ) Send
+                
+                .tag-list
+                    transition-group(
+                        enter-active-class="animate__animated animate__fadeInRight"
+                        leave-active-class="animate__animated animate__fadeOutDown"
+                    )
+                        .ui-tag__wrapper(
+                            v-for="tag in tags"
+                            :key="tag.title"
+                        )
+                            .ui-tag(
+                                @click="addTagUsed(tag)"
+                                :class="{used: tag.use}"
+                            )
+                                span.tag-title {{ tag.title }}
                                 span.button-close
-                            .task-item__content
-                                .task-item__header
-                                    .ui-checkbox-wrapper
-                                        input.ui-checkbox(
-                                            type='checkbox'
-                                            v-model="task.completed"
-                                        )
-                                    span.ui-title-3 {{task.title}}
-                                .task-item__body
-                                    p.ui-text-regular {{task.description}}
+                    .button.button--round.button-primary(
+                        @click="newTask"
+                    ) Send
+
 </template>
 
 <script>
+import { required } from 'vuelidate/lib/validators'
 export default {
     data(){
         return{
             taskTitle: '',
-            taskId: '3',
             taskDescription: '',
             whatWatch: 'Film',
-            tasks: [
-                {
-                    'id': 1,
-                    'title': 'Harry Potter & cursed child',
-                    'description': 'This description is so cool in my opinion',
-                    'whatWatch': 'Film',
-                    'completed': false,
-                    'editing': false
-                },
-                {
-                    'id': 2,
-                    'title': 'Hack',
-                    'description': 'I dont know what i need to write at this description',
-                    'whatWatch': 'Film',
-                    'completed': false,
-                    'editing': false
-                },
-                {
-                    'id': 3,
-                    'title': 'Game of Thrones',
-                    'description': 'So many seasons',
-                    'whatWatch': 'Serial',
-                    'completed': false,
-                    'editing': false
-                }
-            ]
+
+
+            filmHours: 1,
+            filmMinutes: 30,
+            
+            serialSeason: 1,
+            serialSeries: 11,
+            serialSeriesMinutes: 40,
+
+            tagTitle: '',
+            tagMenuShow: false,
+            tagsUsed: []
         }
     },
+    validations: {
+        taskTitle: {
+            required
+            }
+    },
     methods: {
+        newTag () {
+            if(this.tagTitle === ''){
+                return
+            }
+            const tag = {
+                title: this.tagTitle,
+                use: false
+            }     
+            this.$store.dispatch('newTag', tag)
+        },
         newTask () {
             if(this.taskTitle === ''){
                 return
             }
-            this.tasks.push({
-                id: this.taskId,
+            let time
+            if (this.whatWatch === 'Film'){
+                time = this.filmTime
+            }else {
+                time = this.serialTime
+            }
+            const task = {
                 title: this.taskTitle,
                 description: this.taskDescription,
                 whatWatch: this.whatWatch,
+                time,
+                tags:this.tagsUsed,
                 completed: false,
                 editing: false
-            })
+            }
+            this.$store.dispatch('newTask', task)
 
             // Reset
-            this.taskId += 1
             this.taskTitle = ''
             this.taskDescription = ''
+            this.tagsUsed = []
+
+            for(let i = 0; i < this.tags.length; i++){
+                this.tags[i].use = false
+            }
+        },
+        addTagUsed (tag){
+            tag.use = !tag.use
+            if(tag.use){
+                this.tagsUsed.push({
+                    title: tag.title
+                })
+            }else{
+                this.tagsUsed.splice(tag.title, 1)
+            }
+        },
+        getHoursAndMinutes (minutes){
+            let hours = Math.trunc(minutes / 60)
+            let min = minutes % 60
+            return hours + ' Hours ' + min + ' Minutes '
+        }
+    },
+    computed: {
+        tags () {
+            return this.$store.getters.tags
+        },
+        filmTime (){
+            let min = (this.filmHours * 60) + (this.filmMinutes * 1)
+            return this.getHoursAndMinutes(min)
+        },
+        serialTime (){  
+            let min = this.serialSeason * this.serialSeries * this.serialSeriesMinutes
+            return this.getHoursAndMinutes(min)
         }
     }
+
 }
 </script>
 
@@ -142,28 +230,62 @@ export default {
         margin-right 20px
         &last-child
             margin-right:0
-.ui-label
-    margin-right 8px
-.task-item
+
+.total-time
+    margin-bottom  20px
+
+.time-title
+    display block
+    margin-bottom 6px
+
+.time-input
+    max-width 80px
+    margin-right 10px
+
+.tag-list
     margin-bottom 20px
+
+.ui-tag__wrapper
+    margin-right 18px
+    margin-bottom 10px
     &:last-child
-        margin-bottom 0
-.task-item__info
+        margin-right 0
+
+.ui-tag
+    cursor pointer
+    .button-close
+        &.active
+            transform rotate(45deg)
+    &.used
+        background-color #444ce0
+        color #fff
+        .button-close
+            &:before,
+            &:after
+                background-color #fff 
+
+.tag-list--menu
     display flex
     align-items center
     justify-content space-between
-    margin-bottom 20px
-.button-close
-    width 20px
-    height @width 
-.total-time
-    margin-bottom 20px
-.task-item__header
-    display flex
-    align-items center
-    .ui-checkbox-wrapper
-        margin-right 8px
-    .ui-title-3
-        margin-bottom 0
+
+.tag-add--input
+    margin-bottom 0
+    margin-right 10px
+    height 42px
+    
+.button.button--round.button-primary
+    float right
+    margin-top 100px
+
+.form-item
+    .error
+        display none
+        margin-bottom 8px
+        font-size 13.4px
+        color #fc6c65
+    &.errorInput
+        .error
+            display block
 
 </style>
