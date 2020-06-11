@@ -1,19 +1,6 @@
 export default {
     state: {
-        tags: [
-            {
-                title: 'Comedy',
-                use: false
-            },
-                            {
-                title: 'Western',
-                use: false
-            },
-                            {
-                title: 'Adventure',
-                use: false
-            }
-        ]
+        tags: []
     },
     mutations: {
         newTag (state, payload){
