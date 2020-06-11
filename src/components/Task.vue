@@ -25,7 +25,9 @@
                                 .task-item__main-info
                                     span.ui-label.ui-label--light {{task.whatWatch}}
                                     span Total Time: {{ task.time }}
-                                span.button-close
+                                span.button-close(
+                                    @click="deleteTask(task.id)"
+                                )
                             .task-item__content
                                 .task-item__header
                                     .ui-checkbox-wrapper
@@ -44,15 +46,73 @@
                                         )
                                             .ui-tag
                                                 span.tag-title {{ tag.title }}
-                                                
-                                   
+                                        .buttons-list
+                                            .button.button--round.button-default(
+                                                @click="taskEdit(task.id, task.title, task.description)"
+                                            ) Edit
+                                            .button.button--round.button-primary Done
+        .ui-messageBox__wrapper(
+            v-if="editing"
+            :class="{active: editing}"
+        )
+            .ui-messageBox.fadeInDown
+                .ui-messageBox__header
+                    span.messageBox-title {{titleEditing}}
+                    span.button-close(@click="cancelTaskEdit")
+                .ui-messageBox__content
+                    p Title
+                    input(
+                        type="text"
+                        v-model='titleEditing'
+                    )                         
+                    p Description
+                    textarea(
+                        type="text"
+                        v-model='desrEditing'
+                    )
+                .ui-messageBox__footer
+                    .button.button-light(@click="cancelTaskEdit") Cancel
+                    .button.button-primary(@click="finishTaskEdit") OK                                 
 </template>
 
 <script>
 export default {
     data(){
         return {
-            filter: 'active'
+            filter: 'active',
+            editing: false,
+            titleEditing: '',
+            desrEditing: '',
+            taskId: null,
+        }
+    },
+    methods:{
+        taskEdit(id, title, description){
+            this.editing = !this.editing
+            this.taskId = id
+            this.titleEditing = title
+            this.desrEditing = description
+        },
+        cancelTaskEdit (){
+            this.editing = !this.editing
+            // Reset
+            this.taskId = null
+            this.titleEditing = ''
+            this.desrEditing = ''
+        },
+        finishTaskEdit (){
+            this.$store.dispatch('editTask', {
+                id: this.taskId,
+                title: this.titleEditing,
+                description: this.desrEditing,
+            })
+            this.editing = !this.editing
+        },
+        deleteTask (id){
+            this.$store.dispatch('deleteTask', id)
+                .then(() => {
+                    this.$store.dispatch('loadTasks')
+                })
         }
     },
     computed: {
@@ -115,5 +175,28 @@ export default {
         margin-right 8px
     .ui-title-1
         margin-bottom 0
+
+.task-item__body
+    margin-bottom 20px
+
+.tag-list
+    margin-bottom 20px
+
+
+.task-item__foter
+    .buttons-list
+        text-align right
+
+.buttons-list
+    .button
+        margin-right 12px
+        &:last-child
+            margin-right 0
+
+.ui-messageBox__wrapper
+    &.active
+        display flex
+.button-light
+    margin-right 8px
 
 </style>

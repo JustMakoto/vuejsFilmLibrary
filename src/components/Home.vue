@@ -183,6 +183,7 @@ export default {
             this.taskTitle = ''
             this.taskDescription = ''
             this.tagsUsed = []
+            this.$v.$reset()
 
             for(let i = 0; i < this.tags.length; i++){
                 this.tags[i].use = false
@@ -287,5 +288,8 @@ export default {
     &.errorInput
         .error
             display block
-
+input 
+    &.error
+        border-color #fc6c65
+        animation shakeX .3s
 </style>
